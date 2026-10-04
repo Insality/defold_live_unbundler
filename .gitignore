@@ -5,3 +5,4 @@
 .DS_Store
 Thumbs.db
 /tools/__pycache__
+/tools/tests/__pycache__

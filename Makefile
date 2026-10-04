@@ -106,6 +106,9 @@ serve3:
 	@echo "Serve dist directory on http://localhost:8000"
 	@cd dist/defold_live_unbundler && python3 -m http.server 8000
 
+test:
+	@python3 -m unittest discover -s tools/tests
+
 install_requirements:
 	@pip3 install -r tools/requirements.txt
 
