@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.1] - 2026-10-04
+
+### Fixed
+- Packer: resources with identical content at different paths (e.g. two levels sharing
+  one background copied into two folders) are now written into every archive that lists
+  them. Dedup is per archive; before, only the first archive got the bytes and the others
+  failed with `RESOURCE_NOT_FOUND` unless that archive happened to be mounted. Only
+  archives that gained resources change their version hash.
+
 ## [2.0] - 2026-07-18
 
 Sync with the production client this reference project mirrors: the runtime module

@@ -46,6 +46,10 @@ class PackContext:
         self.current_timestamp = str(math.floor(time.time()))
         self.temp_suffix = self.current_timestamp
 
+        # archive name -> hex digests already written into that archive.
+        # Dedup is per archive: equal content under different paths (e.g. two levels
+        # sharing one background) must land in every archive that lists it, else the
+        # archive misses the resource unless the other one happens to be mounted.
         self.added_files = {}
         self.created_archives = {}
         self.files_tree = {"zip_files": {}}
@@ -145,7 +149,8 @@ class PackContext:
                 self.files_tree["zip_files"][common_zip_name]["size"] += self.files[
                     filepath
                 ]["size"]
-            if self.files[filepath]["hexDigest"] not in self.added_files:
+            added_to_zip = self.added_files.setdefault(zip_name, set())
+            if self.files[filepath]["hexDigest"] not in added_to_zip:
                 with open(file_path_hex, "rb") as file_obj:
                     file_contents = file_obj.read()
                     content_hashers["all"].update(file_contents)
@@ -159,7 +164,7 @@ class PackContext:
                     zinfo.compress_type = zipfile.ZIP_DEFLATED
                     zip_file.writestr(zinfo, file_contents)
 
-                    self.added_files[self.files[filepath]["hexDigest"]] = zip_name
+                    added_to_zip.add(self.files[filepath]["hexDigest"])
 
                     for resource_entry in manifest_data_resources[
                         self.files[filepath]["hexDigest"]
@@ -520,10 +525,9 @@ class PackContext:
 
     def is_shared_resource(self, resource_path):
         # Resources used by more than one collection are packed into common_*
-        # archives (see create_common_archives_by_dependency_sets). Packing them
-        # per-collection as well only produces empty stub archives, because
-        # add_files_to_zip writes each resource's bytes exactly once and the
-        # collection already depends on the common archive that holds them.
+        # archives (see create_common_archives_by_dependency_sets), and the
+        # collection already depends on the common archive that holds them, so
+        # they are left out of the per-collection archives.
         return self.common_files.get(resource_path, {}).get("use_count", 0) > 1
 
     def create_collection_archives(self):
